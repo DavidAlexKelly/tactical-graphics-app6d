@@ -33,6 +33,11 @@ mkdir -p "$install_dir"
 tar -xzf "$tarball_path" -C "$install_dir"
 pkg_dir="$install_dir/package"
 
+# The /milsymbol subpath needs the real optional peer dependency present to
+# exercise its milsymbol-delegation branch — install it alongside the
+# packed tarball so Node's module resolution finds it from dist/milsymbol/.
+(cd "$pkg_dir" && npm install --no-save --silent milsymbol@^3.0.4)
+
 node --input-type=module -e "
 import { SymbolCatalog } from '$pkg_dir/dist/engine/index.js';
 import { render, renderSVG, getHandles, applyHandle } from '$pkg_dir/dist/engine/index.js';
@@ -63,6 +68,16 @@ const builders = createOrderBuilders(APP6D_CATALOG);
 assert(typeof builders.seize === 'function', 'createOrderBuilders() missing seize()');
 
 assert(lookupTaskForOrder('Occupy')?.sidc, 'lookupTaskForOrder(\"Occupy\") did not resolve a doctrinal SIDC');
+
+const { resolveSymbol } = await import('$pkg_dir/dist/milsymbol/index.js');
+const viaRealSidc = resolveSymbol(APP6D_CATALOG, 'GFTPO---------G'); // Occupy
+assert(viaRealSidc.kind === 'tactical-graphic', 'resolveSymbol() did not resolve a real doctrinal SIDC to a tactical graphic');
+assert(viaRealSidc.asSVG().startsWith('<svg'), 'resolveSymbol() tactical-graphic branch did not produce an <svg> document');
+assert(typeof viaRealSidc.getAnchor().x === 'number', 'resolveSymbol() tactical-graphic branch getAnchor() malformed');
+
+const viaMilsymbol = resolveSymbol(APP6D_CATALOG, 'SFGPUCI-----D---'); // a real unit SIDC, not in our catalog
+assert(viaMilsymbol.kind === 'milsymbol', 'resolveSymbol() did not fall through to milsymbol for a unit SIDC');
+assert(viaMilsymbol.asSVG().startsWith('<svg'), 'resolveSymbol() milsymbol branch did not produce an <svg> document');
 
 console.log(\`smoke-test: OK (\${names.length} symbols, all public subpaths load)\`);
 "

@@ -10,6 +10,7 @@ export default defineConfig({
     "core/index": "src/core/index.ts",
     "maplibre/index": "src/maplibre/index.ts",
     "react/index": "src/react/index.ts",
+    "milsymbol/index": "src/milsymbol/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
@@ -20,5 +21,5 @@ export default defineConfig({
                          // chunk that every entry imports, instead of N
                          // independent copies.
   treeshake: true,
-  external: ["maplibre-gl", "react", "react-dom"],
+  external: ["maplibre-gl", "react", "react-dom", "milsymbol"],
 });

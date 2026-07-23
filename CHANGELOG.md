@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## 1.0.1
 
+- Added `@tactical-graphics/app6d/milsymbol`: `resolveSymbol(catalog, sidc,
+  options)` resolves a SIDC to whichever library actually covers it — one
+  of this library's own tactical graphics (via a real doctrinal SIDC or
+  this library's synthetic renderer key) or a
+  [milsymbol](https://github.com/spatialillusions/milsymbol) unit/
+  equipment/installation icon — behind one shared `asSVG()`/`getAnchor()`/
+  `getSize()` shape. milsymbol is an optional peer dependency, same
+  treatment as maplibre-gl/react. Also adds `core`'s
+  `resolveCatalogNameForSidc` (real SIDC/synthetic key -> catalog name)
+  and `getSymbolAnchorPoint` (a symbol's declared anchor point in its own
+  param space), and backfills `meta.sidcTaskId` on 41 more built-in
+  symbols so real-SIDC resolution covers 46 of the 53 built-in symbols
+  (the remaining 7 are unlabeled/generic rendering variants with no
+  distinct doctrinal SIDC of their own).
 - Fixed `unitAnchor` metadata on several built-in symbols (Screen, Guard,
   Cover, Seize, Occupy, Secure, Fortified Area, Ambush, Fix, Counterattack
   By Fire) where the declared anchor mode didn't match any handle the
