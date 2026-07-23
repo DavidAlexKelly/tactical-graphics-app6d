@@ -9,6 +9,7 @@ import {
   type Pt2,
 } from "../core/tacticOrders";
 import type { SymbolCatalog } from "../engine/catalog";
+import { escapeXmlAttr } from "../engine/geometry";
 import type { MapAdapter, MarkerHandle, WorldCoord } from "../adapter/types";
 import type { LiveOverrideStore } from "./LiveOverrideStore";
 import { resolveTheme, ensureHandleStyles, type HandleTheme } from "./theme";
@@ -344,7 +345,7 @@ export class OrderHandleController {
     const el = this.makeHandleEl(this.theme.scaleHandleSize, "square", order.colour);
     el.style.cursor = "nwse-resize";
     el.style.zIndex = "3";
-    el.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" style="display:block;margin:auto"><path d="M1 9L9 1M5 9L9 5" stroke="${order.colour}" stroke-width="1.5" fill="none"/></svg>`;
+    el.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" style="display:block;margin:auto"><path d="M1 9L9 1M5 9L9 5" stroke="${escapeXmlAttr(order.colour)}" stroke-width="1.5" fill="none"/></svg>`;
     el.title = "Drag to resize";
     el.classList.add("tg-handle", `tg-handle--${order.id}`);
 
