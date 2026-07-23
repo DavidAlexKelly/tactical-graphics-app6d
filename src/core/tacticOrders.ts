@@ -61,8 +61,18 @@ function screenToMilx(tr: MilxTransform, p: Pt2): Pt2 {
 // NOTE: synthetic identifiers derived from catalog names (e.g. "svg-block"
 // -> "SVGBLOCK"), NOT real MIL-STD-2525/APP-6 SIDCs — those live in
 // tacticTaskCatalog.ts as a separate key space.
+//
+// Cached per SymbolCatalog reference: a SymbolCatalog is immutable once
+// constructed, so this map can be built once and reused instead of
+// recomputing it on every isMilxOrder/milxHandlesForOrder/applyMilxOrderHandle
+// call — several of which run on every pointermove while dragging a handle.
+const sidcKeyCache = new WeakMap<SymbolCatalog, Record<string, string>>();
 function nameBySidcKey(catalog: SymbolCatalog): Record<string, string> {
-  return Object.fromEntries(catalog.list().map((n) => [n.toUpperCase().replace(/-/g, ""), n]));
+  const cached = sidcKeyCache.get(catalog);
+  if (cached) return cached;
+  const map = Object.fromEntries(catalog.list().map((n) => [n.toUpperCase().replace(/-/g, ""), n]));
+  sidcKeyCache.set(catalog, map);
+  return map;
 }
 
 export function isMilxOrder(catalog: SymbolCatalog, sidc: string | undefined): boolean {
