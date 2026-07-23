@@ -1,6 +1,6 @@
 {
   "name": "@tactical-graphics/app6d",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Reusable parametric graphic engine + APP-6D/MIL-STD-2525 symbol catalog, adapter-agnostic overlay rendering and editing handles, with a MapLibre adapter and React hooks.",
   "license": "MIT",
   "type": "module",
