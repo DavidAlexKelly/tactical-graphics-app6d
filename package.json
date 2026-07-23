@@ -1,0 +1,89 @@
+{
+  "name": "@tactical-graphics/app6d",
+  "version": "1.0.1",
+  "description": "Reusable parametric graphic engine + APP-6D/MIL-STD-2525 symbol catalog, adapter-agnostic overlay rendering and editing handles, with a MapLibre adapter and React hooks.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": true,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.js",
+      "require": "./dist/engine/index.cjs"
+    },
+    "./symbols": {
+      "types": "./dist/symbols/index.d.ts",
+      "import": "./dist/symbols/index.js",
+      "require": "./dist/symbols/index.cjs"
+    },
+    "./symbols/individual": {
+      "types": "./dist/symbols/individual/index.d.ts",
+      "import": "./dist/symbols/individual/index.js",
+      "require": "./dist/symbols/individual/index.cjs"
+    },
+    "./adapter": {
+      "types": "./dist/adapter/index.d.ts",
+      "import": "./dist/adapter/index.js",
+      "require": "./dist/adapter/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
+    },
+    "./maplibre": {
+      "types": "./dist/maplibre/index.d.ts",
+      "import": "./dist/maplibre/index.js",
+      "require": "./dist/maplibre/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "peerDependencies": {
+    "maplibre-gl": ">=3.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "maplibre-gl": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "maplibre-gl": "^4.7.1",
+    "react": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "app6d",
+    "mil-std-2525",
+    "sidc",
+    "nato",
+    "tactical-graphics",
+    "maplibre",
+    "military-symbology",
+    "parametric-graphics"
+  ],
+  "dependencies": {
+    "@tactical-graphics/app6d": "^1.0.0"
+  }
+}
