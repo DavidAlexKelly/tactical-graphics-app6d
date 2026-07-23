@@ -98,23 +98,33 @@ export function milxFromForAnchorClick(catalog: SymbolCatalog, sidc: string, cli
   const tr = milxTransformFor(clickPx, zoom, arrowScale, cfg);
   const defaultParams = paramsFor(catalog, name);
   const handles = engineGetHandles(catalog, name, defaultParams);
+  const pointHandles = handles.filter((h) => h.kind === "point");
+  // Generic fallbacks below only kick in when a symbol's handles() doesn't
+  // follow the conventional A/B/P1/P2/spine*/center naming — e.g. a custom
+  // catalog, or a built-in symbol with fully bespoke point names (see
+  // "svg-support-by-fire-position"). They keep click-to-place accurate
+  // instead of silently placing the anchor at the raw click point.
+  const firstPoint = () => pointHandles[0];
+  const lastPoint = () => pointHandles[pointHandles.length - 1];
 
   let anchorHandleId: string | null = null;
   if (unitAnchor === "center") {
-    anchorHandleId = "center";
+    if (handles.find((h) => h.id === "center")) anchorHandleId = "center";
   } else if (unitAnchor === "start") {
     if (handles.find((h) => h.id === "spine0")) anchorHandleId = "spine0";
     else if (handles.find((h) => h.id === "A")) anchorHandleId = "A";
     else if (handles.find((h) => h.id === "P1")) anchorHandleId = "P1";
+    else if (firstPoint()) anchorHandleId = firstPoint().id;
   } else if (unitAnchor === "end") {
     const spineHandles = handles.filter((h) => h.id.startsWith("spine"));
     if (spineHandles.length > 0) anchorHandleId = spineHandles[spineHandles.length - 1].id;
     else if (handles.find((h) => h.id === "B")) anchorHandleId = "B";
     else if (handles.find((h) => h.id === "P2")) anchorHandleId = "P2";
+    else if (lastPoint()) anchorHandleId = lastPoint().id;
   } else if (unitAnchor === "midline") {
-    const hA = handles.find((h) => h.id === "A") ?? handles.find((h) => h.id === "P1");
-    const hB = handles.find((h) => h.id === "B") ?? handles.find((h) => h.id === "P2");
-    if (hA && hB) {
+    const hA = handles.find((h) => h.id === "A") ?? handles.find((h) => h.id === "P1") ?? firstPoint();
+    const hB = handles.find((h) => h.id === "B") ?? handles.find((h) => h.id === "P2") ?? lastPoint();
+    if (hA && hB && hA !== hB) {
       const midScreen = {
         x: (milxToScreen(tr, hA.pos).x + milxToScreen(tr, hB.pos).x) / 2,
         y: (milxToScreen(tr, hA.pos).y + milxToScreen(tr, hB.pos).y) / 2,
@@ -123,9 +133,18 @@ export function milxFromForAnchorClick(catalog: SymbolCatalog, sidc: string, cli
       return { x: clickPx.x + dx, y: clickPx.y + dy };
     }
   }
-  if (!anchorHandleId) return clickPx;
-  const anchorHandle = handles.find((h) => h.id === anchorHandleId);
-  if (!anchorHandle) return clickPx;
+  if (!anchorHandleId) {
+    // No named or positional match at all (e.g. a "center" symbol with no
+    // literal "center" handle) — anchor on the centroid of its point
+    // handles rather than silently placing raw clickPx as the anchor.
+    if (pointHandles.length === 0) return clickPx;
+    const cx = pointHandles.reduce((s, h) => s + h.pos.x, 0) / pointHandles.length;
+    const cy = pointHandles.reduce((s, h) => s + h.pos.y, 0) / pointHandles.length;
+    const centroidScreen = milxToScreen(tr, { x: cx, y: cy });
+    const dx = clickPx.x - centroidScreen.x, dy = clickPx.y - centroidScreen.y;
+    return { x: clickPx.x + dx, y: clickPx.y + dy };
+  }
+  const anchorHandle = handles.find((h) => h.id === anchorHandleId)!;
   const anchorScreenWithFromAtClick = milxToScreen(tr, anchorHandle.pos);
   const dx = clickPx.x - anchorScreenWithFromAtClick.x, dy = clickPx.y - anchorScreenWithFromAtClick.y;
   return { x: clickPx.x + dx, y: clickPx.y + dy };

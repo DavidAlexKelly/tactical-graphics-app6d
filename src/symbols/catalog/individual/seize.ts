@@ -40,6 +40,6 @@ export const seizeSymbol: SymbolDefinition = {
     })));
     return base;
   },
-  unitAnchor: 'end',
+  unitAnchor: 'center',
   meta: { sidcTaskId: "seize" },
 };
