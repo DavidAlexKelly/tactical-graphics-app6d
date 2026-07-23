@@ -29,5 +29,5 @@ export const counterattackByFireSymbol: SymbolDefinition = {
       ...axisHandles(p),
       hScalar('fire', p.fire.pos, (pos) => ({ fire: { ...p.fire, pos } })),
     ],
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "counterattack-by-fire" },
   };

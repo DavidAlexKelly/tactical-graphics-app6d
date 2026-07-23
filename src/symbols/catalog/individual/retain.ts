@@ -24,5 +24,5 @@ export const retainSymbol: SymbolDefinition = {
       return parts;
     },
     handles: circleHandles,
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "retain" },
   };

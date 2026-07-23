@@ -50,5 +50,5 @@ export const ambushSymbol: SymbolDefinition = {
           (pos) => ({ tickReach: Math.max(20, -project(pos, firstTickBase, n)) })),
       ];
     },
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "ambush" },
   };

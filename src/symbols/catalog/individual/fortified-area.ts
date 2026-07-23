@@ -26,5 +26,5 @@ export const fortifiedAreaSymbol: SymbolDefinition = {
           (pos) => ({ tickLen: Math.max(20, dist(pos, p.center) - p.radius) })),
       ];
     },
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "fortified-line" },
   };

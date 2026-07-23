@@ -28,5 +28,5 @@ export const followAndAssumeSymbol: SymbolDefinition = {
       return parts;
     },
     handles: (p: Params): EngineHandle[] => [hPoint('A', p), hPoint('B', p)],
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "follow-and-assume" },
   };

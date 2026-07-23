@@ -30,5 +30,5 @@ export const disruptSymbol: SymbolDefinition = {
       hScalar('maxLen', add(p.A, mul(right(norm(sub(p.B, p.A))), p.maxLen)),
         (pos) => ({ maxLen: Math.max(50, project(pos, p.A, right(norm(sub(p.B, p.A))))) })),
     ],
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "disrupt" },
   };

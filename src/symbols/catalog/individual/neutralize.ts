@@ -18,5 +18,5 @@ export const neutralizeSymbol: SymbolDefinition = {
       fills: [[P(-133, 161), P(-133, -156), P(-69, -156), P(57, 46), P(57, -156), P(123, -156), P(123, 161), P(57, 161), P(-69, -41), P(-69, 161)]],
     }),
     handles: glyphHandles(814),
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "neutralize" },
   };

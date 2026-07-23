@@ -25,5 +25,5 @@ export const supportByFirePositionSymbol: SymbolDefinition = {
       return ['topOuter', 'bendTop', 'bendBottom', 'bottomOuter', 'wingTopTip', 'wingBottomTip', 'notchTopA', 'notchTopB', 'notchBottomA', 'notchBottomB']
         .map((k) => hPoint(k, p));
     },
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "support-by-fire-position" },
   };

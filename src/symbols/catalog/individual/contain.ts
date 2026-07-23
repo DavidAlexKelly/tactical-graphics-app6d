@@ -32,5 +32,5 @@ export const containSymbol: SymbolDefinition = {
       hScalar('radius', onCircle(p.center, p.radius, p.rotation + 180),
         (pos) => ({ radius: Math.max(60, dist(pos, p.center)), rotation: angleOf(sub(pos, p.center)) - 180 })),
     ],
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "contain" },
   };

@@ -26,5 +26,5 @@ export const mainAttackSymbol: SymbolDefinition = {
       );
       return hs;
     },
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "main-attack" },
   };

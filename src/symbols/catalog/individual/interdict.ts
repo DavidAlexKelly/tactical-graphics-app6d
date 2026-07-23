@@ -18,5 +18,5 @@ export const interdictSymbol: SymbolDefinition = {
       fills: [[P(-36, -147), P(-36, 163), P(30, 163), P(30, -147)]],
     }),
     handles: glyphHandles(819),
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "interdict" },
   };

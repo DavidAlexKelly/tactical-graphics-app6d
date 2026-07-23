@@ -10,5 +10,5 @@ export const coverCcSymbol: SymbolDefinition = {
     params: { A: P(150, 499), B: P(99, 872), peaks: 3, amp: 140, hookLen: 260, hookAngle: 130, copies: 2, spacing: 900, label: 'C', labelSize: 160 },
     generate: zigzagHookFamily,
     handles: zigzagHookHandles,
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "cover" },
   };

@@ -5,4 +5,4 @@ import { retrogradeArcFamily, retrogradeArcHandles } from "../../families";
 
 export const DELAY_ARC_NAME = "svg-delay-arc" as const;
 
-export const delayArcSymbol: SymbolDefinition = { title: 'Delay (D, arc)', params: { A: P(300, 1500), B: P(1700, 1500), r: 420, headLen: 220, headSpread: 45, label: 'D', labelSize: 210 }, generate: retrogradeArcFamily, handles: retrogradeArcHandles, unitAnchor: 'midline' };
+export const delayArcSymbol: SymbolDefinition = { title: 'Delay (D, arc)', params: { A: P(300, 1500), B: P(1700, 1500), r: 420, headLen: 220, headSpread: 45, label: 'D', labelSize: 210 }, generate: retrogradeArcFamily, handles: retrogradeArcHandles, unitAnchor: 'midline', meta: { sidcTaskId: "delay" }, };

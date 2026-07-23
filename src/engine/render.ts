@@ -82,6 +82,13 @@ export function render(catalog: SymbolCatalog, name: string, overrides?: Params,
   return partsToSvg(getParts(catalog, name, overrides), style);
 }
 
+/** renderSVG()'s default local coordinate box — every built-in symbol's
+ * params are authored to sit inside this box. Exported so other renderers
+ * (e.g. the milsymbol-compat adapter) can map a param-space point into the
+ * same local pixel space renderSVG() itself uses, without duplicating the
+ * numbers. */
+export const DEFAULT_SVG_BOX = { viewBox: '-100 -100 2300 2100', width: 230, height: 210 } as const;
+
 /** Standalone <svg> document. */
 export function renderSVG(
   catalog: SymbolCatalog,
@@ -89,7 +96,7 @@ export function renderSVG(
   overrides?: Params,
   opts?: { viewBox?: string; width?: number; height?: number; style?: RenderStyle },
 ): string {
-  const o = { viewBox: '-100 -100 2300 2100', width: 230, height: 210, ...opts };
+  const o = { ...DEFAULT_SVG_BOX, ...opts };
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o.viewBox}" width="${o.width}" height="${o.height}">${render(catalog, name, overrides, o.style)}</svg>`;
 }
 

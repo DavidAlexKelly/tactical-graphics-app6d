@@ -27,5 +27,5 @@ export const screenPostSymbol: SymbolDefinition = {
         hScalar('postRadius', add(p.post, P(p.postRadius, 0)), (pos) => ({ postRadius: Math.max(30, dist(pos, p.post)) })),
       ];
     },
-    unitAnchor: 'center',
+    unitAnchor: 'center', meta: { sidcTaskId: "screen" },
   };

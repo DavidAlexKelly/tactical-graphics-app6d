@@ -10,5 +10,5 @@ export const retirementArcSymbol: SymbolDefinition = {
     params: { A: P(36, 1235), B: P(1474, 1235), r: 430, headLen: 222, headSpread: 45, label: 'R', labelSize: 218 },
     generate: retrogradeArcFamily,
     handles: retrogradeArcHandles,
-    unitAnchor: 'midline',
+    unitAnchor: 'midline', meta: { sidcTaskId: "retirement" },
   };

@@ -31,5 +31,5 @@ export const fixSymbol: SymbolDefinition = {
           (pos) => ({ amp: Math.max(20, Math.abs(project(pos, lerp(p.A, p.B, 0.5), n))) })),
       ];
     },
-    unitAnchor: 'start',
+    unitAnchor: 'start', meta: { sidcTaskId: "fix" },
   };

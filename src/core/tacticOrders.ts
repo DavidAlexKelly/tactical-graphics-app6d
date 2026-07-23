@@ -10,9 +10,9 @@ import {
   render as engineRender,
   getHandles as engineGetHandles,
   applyHandle as engineApplyHandle,
-  paramsFor,
 } from "../engine/render";
-import { lookupTaskForOrder } from "./tacticTaskCatalog";
+import type { Params } from "../engine/types";
+import { lookupTaskForOrder, lookupTaskBySidc } from "./tacticTaskCatalog";
 
 export type TacticCategory = "Offensive" | "Defensive" | "Manoeuvre" | "Fire Support" | "Control Measures";
 export type TacticIconFn = (colour: string) => string;
@@ -98,64 +98,79 @@ export function milxHandlesForOrder(
   return engineGetHandles(catalog, name, params).map((h) => ({ id: h.id, kind: h.kind, pos: milxToScreen(tr, h.pos) }));
 }
 
+/**
+ * The point (in the same param/local coordinate space as a symbol's own
+ * handles — i.e. what `getHandles()` returns, NOT screen or world space)
+ * that represents "the anchor" for a symbol instance: where a unit marker
+ * or a milsymbol-style getAnchor() caller should consider its true
+ * position to be. Resolution order per `unitAnchor`:
+ *
+ *  - "center": a literal "center" handle if the symbol has one.
+ *  - "start":  "spine0", else "A", else "P1" (the conventional first-point
+ *              names used across the built-in families).
+ *  - "end":    the last "spine*" handle, else "B", else "P2".
+ *  - "midline": the midpoint of the "start"/"end" pair above.
+ *
+ * Falls back to the first/last point handle (by array position) for
+ * start/end, and to the centroid of all point handles for center/midline/
+ * unrecognised/undeclared — so a symbol with fully bespoke handle names
+ * (e.g. "svg-support-by-fire-position") or no unitAnchor at all still gets
+ * a sensible anchor instead of `undefined`, everywhere except the
+ * deliberately-conservative milxFromForAnchorClick click-placement flow
+ * below (which treats "no unitAnchor" as "don't touch the click point").
+ *
+ * Returns undefined only if the symbol has no point-kind handles at all.
+ */
+export function getSymbolAnchorPoint(catalog: SymbolCatalog, name: string, overrides?: Params): Pt2 | undefined {
+  const unitAnchor = catalog.get(name)?.unitAnchor;
+  const handles = engineGetHandles(catalog, name, overrides);
+  const pointHandles = handles.filter((h) => h.kind === "point");
+  if (pointHandles.length === 0) return undefined;
+
+  const centroid = (): Pt2 => ({
+    x: pointHandles.reduce((s, h) => s + h.pos.x, 0) / pointHandles.length,
+    y: pointHandles.reduce((s, h) => s + h.pos.y, 0) / pointHandles.length,
+  });
+
+  if (unitAnchor === "center") {
+    return (handles.find((h) => h.id === "center") ?? { pos: centroid() }).pos;
+  }
+  if (unitAnchor === "start") {
+    return (
+      handles.find((h) => h.id === "spine0")
+      ?? handles.find((h) => h.id === "A")
+      ?? handles.find((h) => h.id === "P1")
+      ?? pointHandles[0]
+    ).pos;
+  }
+  if (unitAnchor === "end") {
+    const spineHandles = handles.filter((h) => h.id.startsWith("spine"));
+    if (spineHandles.length > 0) return spineHandles[spineHandles.length - 1].pos;
+    return (
+      handles.find((h) => h.id === "B")
+      ?? handles.find((h) => h.id === "P2")
+      ?? pointHandles[pointHandles.length - 1]
+    ).pos;
+  }
+  if (unitAnchor === "midline") {
+    const hA = handles.find((h) => h.id === "A") ?? handles.find((h) => h.id === "P1") ?? pointHandles[0];
+    const hB = handles.find((h) => h.id === "B") ?? handles.find((h) => h.id === "P2") ?? pointHandles[pointHandles.length - 1];
+    if (hA === hB) return hA.pos;
+    return { x: (hA.pos.x + hB.pos.x) / 2, y: (hA.pos.y + hB.pos.y) / 2 };
+  }
+  return centroid();
+}
+
 export function milxFromForAnchorClick(catalog: SymbolCatalog, sidc: string, clickPx: Pt2, zoom?: number, arrowScale?: number, cfg?: MilxPlacementConfig): Pt2 {
   const name = nameBySidcKey(catalog)[sidc];
   if (!name) return clickPx;
-  const def = catalog.get(name);
-  const unitAnchor = def?.unitAnchor;
-  if (!unitAnchor) return clickPx;
+  if (!catalog.get(name)?.unitAnchor) return clickPx;
 
   const tr = milxTransformFor(clickPx, zoom, arrowScale, cfg);
-  const defaultParams = paramsFor(catalog, name);
-  const handles = engineGetHandles(catalog, name, defaultParams);
-  const pointHandles = handles.filter((h) => h.kind === "point");
-  // Generic fallbacks below only kick in when a symbol's handles() doesn't
-  // follow the conventional A/B/P1/P2/spine*/center naming — e.g. a custom
-  // catalog, or a built-in symbol with fully bespoke point names (see
-  // "svg-support-by-fire-position"). They keep click-to-place accurate
-  // instead of silently placing the anchor at the raw click point.
-  const firstPoint = () => pointHandles[0];
-  const lastPoint = () => pointHandles[pointHandles.length - 1];
+  const anchorPoint = getSymbolAnchorPoint(catalog, name);
+  if (!anchorPoint) return clickPx;
 
-  let anchorHandleId: string | null = null;
-  if (unitAnchor === "center") {
-    if (handles.find((h) => h.id === "center")) anchorHandleId = "center";
-  } else if (unitAnchor === "start") {
-    if (handles.find((h) => h.id === "spine0")) anchorHandleId = "spine0";
-    else if (handles.find((h) => h.id === "A")) anchorHandleId = "A";
-    else if (handles.find((h) => h.id === "P1")) anchorHandleId = "P1";
-    else if (firstPoint()) anchorHandleId = firstPoint().id;
-  } else if (unitAnchor === "end") {
-    const spineHandles = handles.filter((h) => h.id.startsWith("spine"));
-    if (spineHandles.length > 0) anchorHandleId = spineHandles[spineHandles.length - 1].id;
-    else if (handles.find((h) => h.id === "B")) anchorHandleId = "B";
-    else if (handles.find((h) => h.id === "P2")) anchorHandleId = "P2";
-    else if (lastPoint()) anchorHandleId = lastPoint().id;
-  } else if (unitAnchor === "midline") {
-    const hA = handles.find((h) => h.id === "A") ?? handles.find((h) => h.id === "P1") ?? firstPoint();
-    const hB = handles.find((h) => h.id === "B") ?? handles.find((h) => h.id === "P2") ?? lastPoint();
-    if (hA && hB && hA !== hB) {
-      const midScreen = {
-        x: (milxToScreen(tr, hA.pos).x + milxToScreen(tr, hB.pos).x) / 2,
-        y: (milxToScreen(tr, hA.pos).y + milxToScreen(tr, hB.pos).y) / 2,
-      };
-      const dx = clickPx.x - midScreen.x, dy = clickPx.y - midScreen.y;
-      return { x: clickPx.x + dx, y: clickPx.y + dy };
-    }
-  }
-  if (!anchorHandleId) {
-    // No named or positional match at all (e.g. a "center" symbol with no
-    // literal "center" handle) — anchor on the centroid of its point
-    // handles rather than silently placing raw clickPx as the anchor.
-    if (pointHandles.length === 0) return clickPx;
-    const cx = pointHandles.reduce((s, h) => s + h.pos.x, 0) / pointHandles.length;
-    const cy = pointHandles.reduce((s, h) => s + h.pos.y, 0) / pointHandles.length;
-    const centroidScreen = milxToScreen(tr, { x: cx, y: cy });
-    const dx = clickPx.x - centroidScreen.x, dy = clickPx.y - centroidScreen.y;
-    return { x: clickPx.x + dx, y: clickPx.y + dy };
-  }
-  const anchorHandle = handles.find((h) => h.id === anchorHandleId)!;
-  const anchorScreenWithFromAtClick = milxToScreen(tr, anchorHandle.pos);
+  const anchorScreenWithFromAtClick = milxToScreen(tr, anchorPoint);
   const dx = clickPx.x - anchorScreenWithFromAtClick.x, dy = clickPx.y - anchorScreenWithFromAtClick.y;
   return { x: clickPx.x + dx, y: clickPx.y + dy };
 }
@@ -226,6 +241,49 @@ export function resolveTacticSidc(catalog: SymbolCatalog, taskName: string | und
   if (idMatch) return idMatch.sidc;
 
   return `TASK_${normalized.replace(/[\^a-z0-9]/g, "").toUpperCase()}`;
+}
+
+// ── Real doctrinal SIDC → catalog entry ──────────────────────────────────
+// The reverse of the above: given a real MIL-STD-2525/APP-6 SIDC (as
+// opposed to this library's synthetic "SVGSEIZE"-style renderer keys),
+// find which catalog entry — if any — renders it. Built once per catalog
+// from each SymbolDefinition's `meta.sidcTaskId` (which cross-references
+// TACTIC_TASK_CATALOG's `id`), since a SymbolCatalog is immutable.
+const taskIdToNameCache = new WeakMap<SymbolCatalog, Map<string, string>>();
+function taskIdToName(catalog: SymbolCatalog): Map<string, string> {
+  const cached = taskIdToNameCache.get(catalog);
+  if (cached) return cached;
+  const map = new Map<string, string>();
+  for (const name of catalog.list()) {
+    const taskId = catalog.get(name)?.meta?.sidcTaskId;
+    if (typeof taskId === "string") map.set(taskId, name);
+  }
+  taskIdToNameCache.set(catalog, map);
+  return map;
+}
+
+/**
+ * Resolves any SIDC-shaped identifier to a catalog entry name — whichever
+ * kind of SIDC the caller has on hand:
+ *
+ *  - This library's own synthetic renderer keys ("svg-seize" -> "SVGSEIZE").
+ *  - A real doctrinal MIL-STD-2525/APP-6 SIDC (e.g. "GFTPO---------G" for
+ *    Occupy), via each symbol's `meta.sidcTaskId` cross-referencing
+ *    `TACTIC_TASK_CATALOG`.
+ *
+ * Not every built-in symbol has a corresponding doctrinal task catalogued
+ * (a few are unlabeled/generic rendering variants of a labeled symbol, or
+ * real graphics this library doesn't yet catalogue the doctrinal SIDC
+ * for) — those still resolve via the synthetic key, just not via a real
+ * SIDC. Returns undefined if `sidc` doesn't match anything in `catalog`
+ * either way.
+ */
+export function resolveCatalogNameForSidc(catalog: SymbolCatalog, sidc: string): string | undefined {
+  const bySynthetic = nameBySidcKey(catalog)[sidc];
+  if (bySynthetic) return bySynthetic;
+  const task = lookupTaskBySidc(sidc);
+  if (!task) return undefined;
+  return taskIdToName(catalog).get(task.id);
 }
 
 export function getUnitAnchorForSidc(catalog: SymbolCatalog, tacticSidc: string | undefined): "start" | "end" | "center" | "midline" | undefined {
