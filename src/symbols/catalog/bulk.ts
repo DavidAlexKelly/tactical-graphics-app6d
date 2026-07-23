@@ -182,7 +182,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
       ...axisHandles(p),
       hScalar('fire', p.fire.pos, (pos) => ({ fire: { ...p.fire, pos } })),
     ],
-    unitAnchor: 'center',
+    unitAnchor: 'start',
   },
   "svg-fix": {
     title: 'Fix',
@@ -210,7 +210,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
           (pos) => ({ amp: Math.max(20, Math.abs(project(pos, lerp(p.A, p.B, 0.5), n))) })),
       ];
     },
-    unitAnchor: 'center',
+    unitAnchor: 'start',
   },
   "svg-follow-and-assume": {
     title: 'Follow And Assume',
@@ -294,7 +294,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
       return parts;
     },
     handles: circleHandles,
-    unitAnchor: 'end',
+    unitAnchor: 'center',
   },
   "svg-secure": {
     title: 'Secure',
@@ -309,7 +309,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
       return parts;
     },
     handles: circleHandles,
-    unitAnchor: 'end',
+    unitAnchor: 'center',
   },
   "svg-retirement-arc": {
     title: 'Retirement',
@@ -346,12 +346,12 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
     },
     unitAnchor: 'center',
   },
-  "svg-blob-atk": { title: 'Attack Position (ATK)', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: 'ATK', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
-  "svg-blob-atk-alt": { title: 'Attack Position (ATK, alt.)', params: { center: P(1050, 950), radius: 560, wobble: 0.32, label: 'ATK', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
-  "svg-blob-obj": { title: 'Objective (OBJ)', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: 'OBJ', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
-  "svg-blob-aa": { title: 'Assembly Area (AA)', params: { center: P(1050, 950), radius: 560, wobble: 0.26, label: 'AA', labelSize: 180 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
-  "svg-blob-aslt-psn": { title: 'Assault Position (ASLT PSN)', params: { center: P(1050, 950), radius: 620, wobble: 0.24, label: ['ASLT', 'PSN'], labelSize: 190 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
-  "svg-blob-penetration-box": { title: 'Penetration Box', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: '', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'end' },
+  "svg-blob-atk": { title: 'Attack Position (ATK)', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: 'ATK', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
+  "svg-blob-atk-alt": { title: 'Attack Position (ATK, alt.)', params: { center: P(1050, 950), radius: 560, wobble: 0.32, label: 'ATK', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
+  "svg-blob-obj": { title: 'Objective (OBJ)', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: 'OBJ', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
+  "svg-blob-aa": { title: 'Assembly Area (AA)', params: { center: P(1050, 950), radius: 560, wobble: 0.26, label: 'AA', labelSize: 180 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
+  "svg-blob-aslt-psn": { title: 'Assault Position (ASLT PSN)', params: { center: P(1050, 950), radius: 620, wobble: 0.24, label: ['ASLT', 'PSN'], labelSize: 190 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
+  "svg-blob-penetration-box": { title: 'Penetration Box', params: { center: P(1050, 950), radius: 480, wobble: 0.22, label: '', labelSize: 150 }, generate: blobFamily, handles: blobHandles, unitAnchor: 'center' },
   "svg-wire-x": { title: 'Wire Obstacle (X row)', params: { A: P(200, 950), B: P(1900, 950), count: 5, tickSize: 90, tickShape: 'x', dashed: false, headArrow: false }, generate: tickRowFamily, handles: tickRowHandles, unitAnchor: 'midline' },
   "svg-minefield-square": { title: 'Minefield Marker (square row)', params: { A: P(200, 950), B: P(1900, 950), count: 4, tickSize: 100, tickShape: 'square', dashed: false, headArrow: false }, generate: tickRowFamily, handles: tickRowHandles, unitAnchor: 'midline' },
   "svg-abatis-triangle": { title: 'Abatis / Obstacle Row (triangle)', params: { A: P(200, 950), B: P(1900, 950), count: 4, tickSize: 110, tickShape: 'triangle', dashed: false, headArrow: false }, generate: tickRowFamily, handles: tickRowHandles, unitAnchor: 'midline' },
@@ -378,7 +378,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
           (pos) => ({ tickLen: Math.max(20, dist(pos, p.center) - p.radius) })),
       ];
     },
-    unitAnchor: 'midline',
+    unitAnchor: 'center',
   },
   "svg-axis-notched": { title: 'Axis of Advance (notched)', params: { spine: [P(60, 1500), P(60, 700), P(600, 300), P(1900, 300)], halfWidth: 200, headLen: 300, headHalf: 260, dashed: false }, generate(p: Params) { return [axisOfAdvance(p as any)]; }, handles: axisHandles, unitAnchor: 'start' },
   "svg-axis-notched-simple": { title: 'Axis of Advance (simple step)', params: { spine: [P(60, 1500), P(60, 700), P(1900, 700)], halfWidth: 180, headLen: 260, headHalf: 220, dashed: false }, generate(p: Params) { return [axisOfAdvance(p as any)]; }, handles: axisHandles, unitAnchor: 'start' },
@@ -468,7 +468,7 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
           (pos) => ({ tickReach: Math.max(20, -project(pos, firstTickBase, n)) })),
       ];
     },
-    unitAnchor: 'center',
+    unitAnchor: 'start',
   },
   "svg-support-by-fire-position": {
     title: 'Support By Fire Position',
@@ -497,11 +497,13 @@ export const BULK_SYMBOLS: Record<string, SymbolDefinition> = {
     params: { A: P(150, 499), B: P(99, 872), peaks: 3, amp: 140, hookLen: 260, hookAngle: 130, copies: 2, spacing: 900, label: 'G', labelSize: 160 },
     generate: zigzagHookFamily,
     handles: zigzagHookHandles,
+    unitAnchor: 'start',
   },
   "svg-cover-cc": {
     title: 'Cover',
     params: { A: P(150, 499), B: P(99, 872), peaks: 3, amp: 140, hookLen: 260, hookAngle: 130, copies: 2, spacing: 900, label: 'C', labelSize: 160 },
     generate: zigzagHookFamily,
     handles: zigzagHookHandles,
+    unitAnchor: 'start',
   },
 };

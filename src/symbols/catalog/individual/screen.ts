@@ -13,5 +13,6 @@ export const screenSymbol: SymbolDefinition = {
   },
   generate: zigzagHookFamily,
   handles: zigzagHookHandles,
+  unitAnchor: 'start',
   meta: { sidcTaskId: "screen" },
 };
