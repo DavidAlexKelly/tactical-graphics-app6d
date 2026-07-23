@@ -15,9 +15,10 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  splitting: true,      // <-- back to true: forces shared modules (engine/registry.ts)
-                         //     to be emitted as ONE shared chunk that every entry
-                         //     imports, instead of N independent copies.
+  splitting: true,      // forces shared modules (e.g. engine/geometry.ts,
+                         // symbols/families.ts) to be emitted as ONE shared
+                         // chunk that every entry imports, instead of N
+                         // independent copies.
   treeshake: true,
   external: ["maplibre-gl", "react", "react-dom"],
 });

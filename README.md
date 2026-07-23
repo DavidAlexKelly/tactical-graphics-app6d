@@ -440,10 +440,10 @@ import { SymbolCatalog } from "@tactical-graphics/app6d/engine";
 const minimalCatalog = new SymbolCatalog({ [BLOCK_NAME]: blockSymbol });
 ```
 
-Currently tree-shakeable individually: Block, Seize, Screen, Destroy,
-Counterattack. The rest of the built-in catalog is bundled together in `symbols/catalog/bulk.ts` (accessible via the full `/symbols` import) —
-splitting the remaining ~45 into individual modules is on the roadmap if
-there's demand.
+Every built-in symbol is individually tree-shakeable this way — importing
+`@tactical-graphics/app6d/symbols/individual` and only referencing e.g.
+`blockSymbol` pulls in just that symbol's module and its geometry
+dependencies, not the other ~52.
 
 ## Migrating from pre-1.0 versions
 
@@ -479,10 +479,14 @@ See `CHANGELOG.md` for the full version history.
 ```bash
 npm install
 npm run typecheck
+npm test
 npm run build
 bash scripts/smoke-test.sh   # verifies the published package's catalog actually loads
 npm publish --access public
 ```
+
+CI (`.github/workflows/ci.yml`) runs `typecheck`, `test`, `build`, and the
+smoke test on every push and pull request.
 
 ## License
 
