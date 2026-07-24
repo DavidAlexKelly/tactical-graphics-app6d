@@ -19,6 +19,7 @@ from the ground up to be usable in **any** map/canvas environment, with
 - [Quick start — rendering a symbol](#quick-start--rendering-a-symbol)
 - [Adding your own custom symbols](#adding-your-own-custom-symbols)
 - [MapLibre integration](#maplibre-integration)
+  - [Attaching a unit marker to a task order](#attaching-a-unit-marker-to-a-task-order)
 - [React integration](#react-integration)
 - [Using a different map library](#using-a-different-map-library-the-mapadapter-interface)
 - [Doctrinal task lookups (real APP-6D SIDCs)](#doctrinal-task-lookups-real-app-6d-sidcs)
@@ -246,6 +247,53 @@ interface PlacedOrder {
 Note on `tacticSidc`: this is a synthetic renderer lookup key
 derived from the catalog entry's name ("svg-seize" → "SVGSEIZE"), not a real MIL-STD-2525/APP-6 SIDC. See Doctrinal task lookups for
 how to get the real doctrinal SIDC alongside it.
+
+### Attaching a unit marker to a task order
+
+A common pattern — especially alongside
+[milsymbol](#milsymbol-interoperability) unit icons — is letting a unit
+"become" a task order's position: e.g. the Seize order for a given
+objective should always sit on top of whichever unit is actually
+assigned to seize it, tracking that unit as it moves.
+
+Two things you need, both explained here because getting either one
+wrong is what makes this feel fiddly:
+
+1. **`from` is not the same point as the symbol's own visual anchor.**
+   Every built-in symbol's shape is authored in its own local coordinate
+   space and translated into place via `from` — but the symbol's
+   *declared* anchor (the point `unitAnchor` designates: a Seize's
+   center, a Block's first corner, ...) usually sits some fixed offset
+   away from that translation origin, not exactly on top of it. Setting
+   `order.from = unit.position` directly will visibly leave the graphic
+   floating near the unit rather than glued to it — sometimes by a lot,
+   depending on the symbol. Use `resolveFromForUnitPosition` instead of
+   assigning the unit's position straight onto `from`; it does the same
+   math `milxFromForAnchorClick` uses for initial click-placement, just
+   re-run on every position update instead of once:
+
+   ```javascript
+   import { resolveFromForUnitPosition } from "@tactical-graphics/app6d/maplibre";
+
+   // Call this every time the attached unit's position changes (a move
+   // event, a poll, whatever your unit layer already does):
+   const from = resolveFromForUnitPosition(APP6D_CATALOG, adapter, order.tacticSidc, unit.position, order.milxScale);
+   onOrderUpdate(order.id, { from, fromAnchored: true });
+   ```
+
+   `adapter` is whatever `MapAdapter` you're already using (the one
+   `createMaplibreTacticGraphics`/`useTacticGraphics` builds internally
+   isn't exposed, so construct your own `MaplibreAdapter` — or any
+   `MapAdapter` — for this call; it's cheap and stateless).
+
+2. **Set `fromAnchored: true` while it's attached.** This hides the
+   order's own move handle (and, for symbols like Seize whose "center"
+   handle doubles as its move control, that handle too) so your unit
+   marker and this library's own drag handling aren't fighting over the
+   same point. Reshape/resize handles (radius, spine points, the scale
+   handle, ...) stay interactive — only *moving* the symbol is locked to
+   the unit. Set it back to `false` (or omit it) to detach and let the
+   order be dragged freely again.
 
 ## React integration
 

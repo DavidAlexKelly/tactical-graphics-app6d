@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## 1.0.1
 
+- Fixed `fromAnchored` being silently ignored for every built-in tactical
+  graphic: `OrderHandleController` only honored it on the plain-arrow
+  fallback path, so the move handle (and, for symbols like Seize whose
+  "center" handle doubles as its move control, that handle too) stayed
+  draggable even when something else — e.g. an attached unit marker —
+  was supposed to own the order's position. Also added
+  `resolveFromForUnitPosition` (`@tactical-graphics/app6d/maplibre`), the
+  live/continuous counterpart to `milxFromForAnchorClick`: assigning a
+  unit's position straight onto `order.from` leaves most symbols visibly
+  offset from the unit (their declared anchor sits a fixed, symbol-specific
+  distance from the translation origin `from` actually controls) — this
+  function does the correct math on every position update instead of just
+  at initial placement. See the README's "Attaching a unit marker to a
+  task order" section.
 - Added `@tactical-graphics/app6d/milsymbol`: `resolveSymbol(catalog, sidc,
   options)` resolves a SIDC to whichever library actually covers it — one
   of this library's own tactical graphics (via a real doctrinal SIDC or
