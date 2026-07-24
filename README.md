@@ -19,9 +19,11 @@ from the ground up to be usable in **any** map/canvas environment, with
 - [Quick start — rendering a symbol](#quick-start--rendering-a-symbol)
 - [Adding your own custom symbols](#adding-your-own-custom-symbols)
 - [MapLibre integration](#maplibre-integration)
+  - [Attaching a unit marker to a task order](#attaching-a-unit-marker-to-a-task-order)
 - [React integration](#react-integration)
 - [Using a different map library](#using-a-different-map-library-the-mapadapter-interface)
 - [Doctrinal task lookups (real APP-6D SIDCs)](#doctrinal-task-lookups-real-app-6d-sidcs)
+- [Milsymbol interoperability](#milsymbol-interoperability)
 - [Semantic order builders](#semantic-order-builders)
 - [Theming and scale limits](#theming-and-scale-limits)
 - [Serialization / persistence](#serialization--persistence)
@@ -68,17 +70,19 @@ This package solves all of that, and is explicitly designed so that:
 - `@tactical-graphics/app6d/core` — SIDC resolution, doctrinal task lookups, semantic order builders.
 - `@tactical-graphics/app6d/maplibre` — MapLibre GL JS adapter + one-call setup (createMaplibreTacticGraphics).
 - `@tactical-graphics/app6d/react` — useTacticGraphics + useOrderStore hooks.
+- `@tactical-graphics/app6d/milsymbol` — resolves a SIDC to either one of this library's tactical graphics or a [milsymbol](https://github.com/spatialillusions/milsymbol) unit/equipment/installation icon, behind one shared asSVG()/getAnchor()/getSize() shape.
 
 ## Install
 
 ```bash
 npm install @tactical-graphics/app6d
 ```
-maplibre-gl and react are optional peer dependencies — install
+maplibre-gl, react, and milsymbol are optional peer dependencies — install
 whichever you actually use:
 ```bash
 npm install maplibre-gl   # if using @tactical-graphics/app6d/maplibre
 npm install react          # if using @tactical-graphics/app6d/react
+npm install milsymbol      # if using @tactical-graphics/app6d/milsymbol
 ```
 `@tactical-graphics/app6d/engine`, `/symbols`, `/adapter`, and `/core` have zero runtime dependencies and work in any JS environment (Node, browser, SSR).
 
@@ -244,6 +248,53 @@ Note on `tacticSidc`: this is a synthetic renderer lookup key
 derived from the catalog entry's name ("svg-seize" → "SVGSEIZE"), not a real MIL-STD-2525/APP-6 SIDC. See Doctrinal task lookups for
 how to get the real doctrinal SIDC alongside it.
 
+### Attaching a unit marker to a task order
+
+A common pattern — especially alongside
+[milsymbol](#milsymbol-interoperability) unit icons — is letting a unit
+"become" a task order's position: e.g. the Seize order for a given
+objective should always sit on top of whichever unit is actually
+assigned to seize it, tracking that unit as it moves.
+
+Two things you need, both explained here because getting either one
+wrong is what makes this feel fiddly:
+
+1. **`from` is not the same point as the symbol's own visual anchor.**
+   Every built-in symbol's shape is authored in its own local coordinate
+   space and translated into place via `from` — but the symbol's
+   *declared* anchor (the point `unitAnchor` designates: a Seize's
+   center, a Block's first corner, ...) usually sits some fixed offset
+   away from that translation origin, not exactly on top of it. Setting
+   `order.from = unit.position` directly will visibly leave the graphic
+   floating near the unit rather than glued to it — sometimes by a lot,
+   depending on the symbol. Use `resolveFromForUnitPosition` instead of
+   assigning the unit's position straight onto `from`; it does the same
+   math `milxFromForAnchorClick` uses for initial click-placement, just
+   re-run on every position update instead of once:
+
+   ```javascript
+   import { resolveFromForUnitPosition } from "@tactical-graphics/app6d/maplibre";
+
+   // Call this every time the attached unit's position changes (a move
+   // event, a poll, whatever your unit layer already does):
+   const from = resolveFromForUnitPosition(APP6D_CATALOG, adapter, order.tacticSidc, unit.position, order.milxScale);
+   onOrderUpdate(order.id, { from, fromAnchored: true });
+   ```
+
+   `adapter` is whatever `MapAdapter` you're already using (the one
+   `createMaplibreTacticGraphics`/`useTacticGraphics` builds internally
+   isn't exposed, so construct your own `MaplibreAdapter` — or any
+   `MapAdapter` — for this call; it's cheap and stateless).
+
+2. **Set `fromAnchored: true` while it's attached.** This hides the
+   order's own move handle (and, for symbols like Seize whose "center"
+   handle doubles as its move control, that handle too) so your unit
+   marker and this library's own drag handling aren't fighting over the
+   same point. Reshape/resize handles (radius, spine points, the scale
+   handle, ...) stay interactive — only *moving* the symbol is locked to
+   the unit. Set it back to `false` (or omit it) to detach and let the
+   order be dragged freely again.
+
 ## React integration
 
 ```javascript
@@ -360,6 +411,64 @@ interface MyStoredOrder {
 const docSidc = lookupTaskForOrder(taskName)?.sidc;
 ```
 
+Going the other way — from a real doctrinal SIDC back to a catalog entry
+— use `resolveCatalogNameForSidc`. It also still accepts this library's
+own synthetic renderer keys, so it's a safe drop-in wherever you're
+currently keying off `tacticSidc` directly:
+
+```javascript
+import { resolveCatalogNameForSidc } from "@tactical-graphics/app6d/core";
+
+resolveCatalogNameForSidc(APP6D_CATALOG, "GFTPO---------G"); // "svg-occupy"
+resolveCatalogNameForSidc(APP6D_CATALOG, "SVGSEIZE");        // "svg-seize"
+resolveCatalogNameForSidc(APP6D_CATALOG, "SFGPUCI-----D---"); // undefined — a unit SIDC, not a tactical graphic
+```
+
+Not every built-in symbol has a doctrinal SIDC catalogued yet (a few are
+unlabeled/generic rendering variants) — those still resolve via their
+synthetic key, just not via a real SIDC.
+
+## Milsymbol interoperability
+
+[milsymbol](https://github.com/spatialillusions/milsymbol) renders
+MIL-STD-2525/APP-6 *unit, equipment, and installation* icons from a real
+SIDC — a different job from this library's *tactical graphics* (Seize,
+Block, Screen, ...), which milsymbol doesn't render at all. If your app
+uses both — milsymbol for unit markers, this library for the graphics
+connecting/relating to them — `resolveSymbol` picks whichever one
+actually covers a given SIDC and hands back a matching `asSVG()`/
+`getAnchor()`/`getSize()` object either way, so placement code doesn't
+need to know which library actually drew it:
+
+```javascript
+import { resolveSymbol } from "@tactical-graphics/app6d/milsymbol";
+import { APP6D_CATALOG } from "@tactical-graphics/app6d/symbols";
+
+// A real doctrinal SIDC for a tactical graphic — resolves against this library.
+const occupy = resolveSymbol(APP6D_CATALOG, "GFTPO---------G", {
+  params: { center: { x: 1050, y: 950 } }, // milxParams-shaped overrides
+  style: { stroke: "#4a90d9" },
+});
+occupy.kind;        // "tactical-graphic"
+occupy.asSVG();     // standalone <svg>...</svg>
+occupy.getAnchor(); // { x, y } in the same local pixel box asSVG() renders into
+occupy.getSize();   // { width, height } of that box
+
+// A real unit SIDC — not one of this library's graphics, falls through to milsymbol.
+const unit = resolveSymbol(APP6D_CATALOG, "SFGPUCI-----D---", {
+  milsymbolOptions: { size: 35, uniqueDesignation: "1-8 IN" },
+});
+unit.kind; // "milsymbol"
+```
+
+`resolveSymbol`'s third argument is `{ params?, style?, size? }` for the
+tactical-graphic branch and `{ milsymbolOptions? }` for the milsymbol
+branch — pass whichever applies; the other branch's fields are ignored.
+
+milsymbol is only imported by this subpath (same treatment as
+maplibre-gl under `/maplibre`) — install it if you use `/milsymbol`, skip
+it otherwise.
+
 ## Semantic order builders
 
 For programmatic placement (e.g. from an LLM-generated plan) without
@@ -440,10 +549,10 @@ import { SymbolCatalog } from "@tactical-graphics/app6d/engine";
 const minimalCatalog = new SymbolCatalog({ [BLOCK_NAME]: blockSymbol });
 ```
 
-Currently tree-shakeable individually: Block, Seize, Screen, Destroy,
-Counterattack. The rest of the built-in catalog is bundled together in `symbols/catalog/bulk.ts` (accessible via the full `/symbols` import) —
-splitting the remaining ~45 into individual modules is on the roadmap if
-there's demand.
+Every built-in symbol is individually tree-shakeable this way — importing
+`@tactical-graphics/app6d/symbols/individual` and only referencing e.g.
+`blockSymbol` pulls in just that symbol's module and its geometry
+dependencies, not the other ~52.
 
 ## Migrating from pre-1.0 versions
 
@@ -479,10 +588,14 @@ See `CHANGELOG.md` for the full version history.
 ```bash
 npm install
 npm run typecheck
+npm test
 npm run build
 bash scripts/smoke-test.sh   # verifies the published package's catalog actually loads
 npm publish --access public
 ```
+
+CI (`.github/workflows/ci.yml`) runs `typecheck`, `test`, `build`, and the
+smoke test on every push and pull request.
 
 ## License
 

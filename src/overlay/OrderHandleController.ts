@@ -9,6 +9,7 @@ import {
   type Pt2,
 } from "../core/tacticOrders";
 import type { SymbolCatalog } from "../engine/catalog";
+import { escapeXmlAttr } from "../engine/geometry";
 import type { MapAdapter, MarkerHandle, WorldCoord } from "../adapter/types";
 import type { LiveOverrideStore } from "./LiveOverrideStore";
 import { resolveTheme, ensureHandleStyles, type HandleTheme } from "./theme";
@@ -162,7 +163,10 @@ export class OrderHandleController {
 
   private syncMilxPositionHandle(order: PlacedOrder): void {
     const key = `${order.id}:milx-pos`;
-    if (milxHasCenterHandle(this.catalog, order.tacticSidc)) {
+    // fromAnchored means something else — e.g. a unit marker — now owns
+    // this order's position; don't draw a handle that would fight it for
+    // control.
+    if (order.fromAnchored || milxHasCenterHandle(this.catalog, order.tacticSidc)) {
       const stale = this.handles.get(key);
       if (stale) { stale.remove(); this.handles.delete(key); }
       return;
@@ -238,7 +242,14 @@ export class OrderHandleController {
     const fPx = adapter.project(order.from);
     if (!isFinite(fPx.x)) return;
     const zoom = adapter.getZoom();
-    const handles = milxHandlesForOrder(this.catalog, order.tacticSidc!, { x: fPx.x, y: fPx.y }, order.milxParams, zoom, order.milxScale);
+    const allHandles = milxHandlesForOrder(this.catalog, order.tacticSidc!, { x: fPx.x, y: fPx.y }, order.milxParams, zoom, order.milxScale);
+    // For symbols whose own "center" handle stands in for the generic move
+    // handle (see syncMilxPositionHandle's milxHasCenterHandle check), that
+    // handle is this symbol's de facto move control — suppress it too when
+    // fromAnchored, for the same reason: something else now owns this
+    // order's position. Reshape/resize handles (radius, gapAngle, marker,
+    // ...) stay interactive.
+    const handles = order.fromAnchored ? allHandles.filter((h) => h.id !== "center") : allHandles;
 
     const wanted = new Set(handles.map((h) => `${order.id}:milx:${h.id}`));
     wanted.add(`${order.id}:milx:__scale`);
@@ -344,7 +355,7 @@ export class OrderHandleController {
     const el = this.makeHandleEl(this.theme.scaleHandleSize, "square", order.colour);
     el.style.cursor = "nwse-resize";
     el.style.zIndex = "3";
-    el.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" style="display:block;margin:auto"><path d="M1 9L9 1M5 9L9 5" stroke="${order.colour}" stroke-width="1.5" fill="none"/></svg>`;
+    el.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" style="display:block;margin:auto"><path d="M1 9L9 1M5 9L9 5" stroke="${escapeXmlAttr(order.colour)}" stroke-width="1.5" fill="none"/></svg>`;
     el.title = "Drag to resize";
     el.classList.add("tg-handle", `tg-handle--${order.id}`);
 

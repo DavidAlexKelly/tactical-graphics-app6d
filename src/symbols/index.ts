@@ -13,14 +13,12 @@
 // Maps.
 import { SymbolCatalog } from "../engine/catalog";
 import { INDIVIDUAL_SYMBOLS } from "./catalog/individual/index";
-import { BULK_SYMBOLS } from "./catalog/bulk";
 import type { SymbolDefinition } from "../engine/types";
 
-/** Every built-in APP-6D symbol (individually tree-shakeable ones
- * included), as a plain name -> definition map. */
+/** Every built-in APP-6D symbol — all of them individually tree-shakeable —
+ * as a plain name -> definition map. */
 export const APP6D_SYMBOLS: Record<string, SymbolDefinition> = {
   ...INDIVIDUAL_SYMBOLS,
-  ...BULK_SYMBOLS,
 };
 
 /** The full built-in APP-6D catalog, ready to pass into render()/

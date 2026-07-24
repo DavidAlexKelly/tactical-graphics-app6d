@@ -43,20 +43,32 @@
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js",
       "require": "./dist/react/index.cjs"
+    },
+    "./milsymbol": {
+      "types": "./dist/milsymbol/index.d.ts",
+      "import": "./dist/milsymbol/index.js",
+      "require": "./dist/milsymbol/index.cjs"
     }
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run build"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "peerDependencies": {
     "maplibre-gl": ">=3.0.0",
+    "milsymbol": ">=3.0.0",
     "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "maplibre-gl": {
+      "optional": true
+    },
+    "milsymbol": {
       "optional": true
     },
     "react": {
@@ -64,11 +76,18 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^18.2.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^26.1.0",
     "maplibre-gl": "^4.7.1",
+    "milsymbol": "^3.0.4",
     "react": "^18.2.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=18"
@@ -82,8 +101,5 @@
     "maplibre",
     "military-symbology",
     "parametric-graphics"
-  ],
-  "dependencies": {
-    "@tactical-graphics/app6d": "^1.0.0"
-  }
+  ]
 }

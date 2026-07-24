@@ -2,9 +2,8 @@
 // multiple APP-6D symbols (Block/Penetrate/Clear all share blockFamily,
 // etc). Exported so custom catalogs can reuse them too.
 import {
-  Pt, P, add, sub, mul, dist, norm, lerp, perp, right, rot, angleOf, onCircle,
-  project, polyD, lineD, chevron, lineWithGap, labelGapHalf, circleArcs,
-  gapArrowDir, offsetPolyline,
+  Pt, P, add, sub, mul, dist, norm, lerp, perp, rot, angleOf, onCircle,
+  project, polyD, lineD, chevron, lineWithGap, labelGapHalf, offsetPolyline,
 } from "../engine/geometry";
 import type { Part, Params, EngineHandle } from "../engine/types";
 

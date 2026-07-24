@@ -43,7 +43,6 @@ export function useTacticGraphics(
       handle.destroy();
       handleRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, catalog]);
 
   useEffect(() => {

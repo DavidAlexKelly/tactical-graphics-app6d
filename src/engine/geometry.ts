@@ -25,6 +25,13 @@ export const onCircle = (c: Pt, r: number, deg: number): Pt =>
   P(c.x + r * Math.cos(deg * DEG), c.y + r * Math.sin(deg * DEG));
 export const f = (n: number): number => Math.round(n * 100) / 100;
 
+/** Escape a string for safe use as SVG/XML text content (between tags). */
+export const escapeXmlText = (s: string): string =>
+  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** Escape a string for safe use inside a double-quoted SVG/XML attribute value. */
+export const escapeXmlAttr = (s: string): string => escapeXmlText(s).replace(/"/g, '&quot;');
+
 /** scalar projection of (pos - origin) onto unit direction `dir` */
 export function project(pos: Pt, origin: Pt, dir: Pt): number {
   const v = sub(pos, origin);
