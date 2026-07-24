@@ -3,6 +3,7 @@
 // (MapLibre, Leaflet, a plain canvas, …). Takes an explicit SymbolCatalog
 // — no shared global state.
 import type { Pt } from "../engine/geometry";
+import { escapeXmlAttr } from "../engine/geometry";
 import { isMilxOrder as isRegisteredSymbol, milxHandlesForOrder, getTacticOrders } from "../core/tacticOrders";
 import type { SymbolCatalog } from "../engine/catalog";
 import type { MapAdapter } from "../adapter/types";
@@ -19,8 +20,9 @@ function fallbackArrow(from: Pt, to: Pt, colour: string): string {
   const ex = to.x - ux * 14, ey = to.y - uy * 14;
   const h1x = ex + nx * 7, h1y = ey + ny * 7;
   const h2x = ex - nx * 7, h2y = ey - ny * 7;
-  return `<line x1="${from.x.toFixed(1)}" y1="${from.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${colour}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>`
-    + `<polyline points="${h1x.toFixed(1)},${h1y.toFixed(1)} ${to.x.toFixed(1)},${to.y.toFixed(1)} ${h2x.toFixed(1)},${h2y.toFixed(1)}" fill="none" stroke="${colour}" stroke-width="2" stroke-linejoin="round" opacity="0.9"/>`;
+  const c = escapeXmlAttr(colour);
+  return `<line x1="${from.x.toFixed(1)}" y1="${from.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>`
+    + `<polyline points="${h1x.toFixed(1)},${h1y.toFixed(1)} ${to.x.toFixed(1)},${to.y.toFixed(1)} ${h2x.toFixed(1)},${h2y.toFixed(1)}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" opacity="0.9"/>`;
 }
 
 function buildHitStrip(from: Pt, to: Pt): string {
@@ -85,8 +87,13 @@ export class TacticOverlay {
   }
 
   setHovered(orderId: string, hovered: boolean): void {
-    const g = this.svg.querySelector<SVGGElement>(`g[data-id="${orderId}"]`);
-    g?.classList.toggle("tg-hovered", hovered);
+    // Compare attribute values in JS rather than interpolating orderId into
+    // a querySelector string — an id containing `"` would otherwise either
+    // throw (invalid selector) or, worse, be crafted to match unintended
+    // elements.
+    this.svg.querySelectorAll<SVGGElement>("g[data-id]").forEach((g) => {
+      if (g.getAttribute("data-id") === orderId) g.classList.toggle("tg-hovered", hovered);
+    });
     this.onHoverChangeCb?.(orderId, hovered);
   }
 
@@ -141,7 +148,7 @@ export class TacticOverlay {
         if (!inner) continue;
 
         const hitStrip = buildHitStrip(from, to);
-        parts.push(`<g data-id="${order.id}" style="cursor:pointer">`, inner, hitStrip, `</g>`);
+        parts.push(`<g data-id="${escapeXmlAttr(order.id)}" style="cursor:pointer">`, inner, hitStrip, `</g>`);
       } catch {
         // skip malformed order
       }

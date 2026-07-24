@@ -6,7 +6,7 @@
 import type { Pt } from "./geometry";
 import type { Params, Part, EngineHandle, RenderStyle } from "./types";
 import type { SymbolCatalog } from "./catalog";
-import { f } from "./geometry";
+import { f, escapeXmlText, escapeXmlAttr } from "./geometry";
 
 type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
 
@@ -54,20 +54,22 @@ const DEFAULT_STYLE: Required<RenderStyle> = {
 
 function partsToSvg(parts: Part[], style?: RenderStyle): string {
   const s = { ...DEFAULT_STYLE, ...style };
-  const dash = s.dash ?? `${s.strokeWidth * 2},${s.strokeWidth * 2}`;
+  const dash = escapeXmlAttr(String(s.dash ?? `${s.strokeWidth * 2},${s.strokeWidth * 2}`));
+  const stroke = escapeXmlAttr(s.stroke);
+  const font = escapeXmlAttr(s.font);
   const chunks: string[] = [
-    `<g fill="none" stroke="${s.stroke}" stroke-width="${s.strokeWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.opacity}">`,
+    `<g fill="none" stroke="${stroke}" stroke-width="${s.strokeWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.opacity}">`,
   ];
   for (const part of parts) {
     if (part.kind === 'stroke') {
       chunks.push(`<path d="${part.d}"${part.dashed ? ` stroke-dasharray="${dash}"` : ''}/>`);
     } else if (part.kind === 'fill') {
-      chunks.push(`<path d="${part.d}" fill="${s.stroke}" stroke="none"/>`);
+      chunks.push(`<path d="${part.d}" fill="${stroke}" stroke="none"/>`);
     } else if (part.kind === 'text') {
       const tr = part.rotate ? ` transform="rotate(${f(part.rotate)} ${f(part.pos.x)} ${f(part.pos.y)})"` : '';
       chunks.push(
-        `<text x="${f(part.pos.x)}" y="${f(part.pos.y)}" dy="0.35em" font-family="${s.font}" ` +
-        `font-weight="bold" font-size="${f(part.size)}" text-anchor="middle" fill="${s.stroke}" stroke="none"${tr}>${part.text}</text>`,
+        `<text x="${f(part.pos.x)}" y="${f(part.pos.y)}" dy="0.35em" font-family="${font}" ` +
+        `font-weight="bold" font-size="${f(part.size)}" text-anchor="middle" fill="${stroke}" stroke="none"${tr}>${escapeXmlText(part.text)}</text>`,
       );
     }
   }
@@ -80,6 +82,13 @@ export function render(catalog: SymbolCatalog, name: string, overrides?: Params,
   return partsToSvg(getParts(catalog, name, overrides), style);
 }
 
+/** renderSVG()'s default local coordinate box — every built-in symbol's
+ * params are authored to sit inside this box. Exported so other renderers
+ * (e.g. the milsymbol-compat adapter) can map a param-space point into the
+ * same local pixel space renderSVG() itself uses, without duplicating the
+ * numbers. */
+export const DEFAULT_SVG_BOX = { viewBox: '-100 -100 2300 2100', width: 230, height: 210 } as const;
+
 /** Standalone <svg> document. */
 export function renderSVG(
   catalog: SymbolCatalog,
@@ -87,7 +96,7 @@ export function renderSVG(
   overrides?: Params,
   opts?: { viewBox?: string; width?: number; height?: number; style?: RenderStyle },
 ): string {
-  const o = { viewBox: '-100 -100 2300 2100', width: 230, height: 210, ...opts };
+  const o = { ...DEFAULT_SVG_BOX, ...opts };
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o.viewBox}" width="${o.width}" height="${o.height}">${render(catalog, name, overrides, o.style)}</svg>`;
 }
 
