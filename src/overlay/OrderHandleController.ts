@@ -163,7 +163,10 @@ export class OrderHandleController {
 
   private syncMilxPositionHandle(order: PlacedOrder): void {
     const key = `${order.id}:milx-pos`;
-    if (milxHasCenterHandle(this.catalog, order.tacticSidc)) {
+    // fromAnchored means something else — e.g. a unit marker — now owns
+    // this order's position; don't draw a handle that would fight it for
+    // control.
+    if (order.fromAnchored || milxHasCenterHandle(this.catalog, order.tacticSidc)) {
       const stale = this.handles.get(key);
       if (stale) { stale.remove(); this.handles.delete(key); }
       return;
@@ -239,7 +242,14 @@ export class OrderHandleController {
     const fPx = adapter.project(order.from);
     if (!isFinite(fPx.x)) return;
     const zoom = adapter.getZoom();
-    const handles = milxHandlesForOrder(this.catalog, order.tacticSidc!, { x: fPx.x, y: fPx.y }, order.milxParams, zoom, order.milxScale);
+    const allHandles = milxHandlesForOrder(this.catalog, order.tacticSidc!, { x: fPx.x, y: fPx.y }, order.milxParams, zoom, order.milxScale);
+    // For symbols whose own "center" handle stands in for the generic move
+    // handle (see syncMilxPositionHandle's milxHasCenterHandle check), that
+    // handle is this symbol's de facto move control — suppress it too when
+    // fromAnchored, for the same reason: something else now owns this
+    // order's position. Reshape/resize handles (radius, gapAngle, marker,
+    // ...) stay interactive.
+    const handles = order.fromAnchored ? allHandles.filter((h) => h.id !== "center") : allHandles;
 
     const wanted = new Set(handles.map((h) => `${order.id}:milx:${h.id}`));
     wanted.add(`${order.id}:milx:__scale`);
