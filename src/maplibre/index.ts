@@ -15,6 +15,7 @@ export { MaplibreAdapter } from "./maplibre-adapter";
 export { TacticOverlay } from "../overlay/TacticOverlay";
 export { OrderHandleController, type ScaleRange } from "../overlay/OrderHandleController";
 export { LiveOverrideStore } from "../overlay/LiveOverrideStore";
+export { resolveFromForUnitPosition } from "../overlay/unitAttachment";
 export type { HandleTheme } from "../overlay/theme";
 export type { PlacedOrder, OrderHandleCallbacks, LineStyle, EndpointStyle, WorldCoord } from "./types";
 
